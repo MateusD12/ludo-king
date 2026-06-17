@@ -7,112 +7,122 @@ export interface GameSetup {
 }
 
 const COLOR_ORDER: PlayerColor[] = ['GREEN', 'YELLOW', 'BLUE', 'RED']
-const COLOR_NAME = { GREEN: 'Verde', YELLOW: 'Amarelo', BLUE: 'Azul', RED: 'Vermelho' }
+const COLOR_PT: Record<PlayerColor, string> = {
+  GREEN: 'Verde', YELLOW: 'Amarelo', BLUE: 'Azul', RED: 'Vermelho'
+}
 
 export class MenuScene extends Phaser.Scene {
   private count = 4
   private ai = [false, true, true, true]
+
+  // Referências para atualização dinâmica
   private countBtns: Phaser.GameObjects.Text[] = []
-  private slotBtns: Phaser.GameObjects.Text[] = []
+  private slotRows: { bg: Phaser.GameObjects.Rectangle; label: Phaser.GameObjects.Text }[] = []
 
   constructor() { super('MenuScene') }
 
   create() {
     const { width, height } = this.scale
 
+    // Fundo
     this.add.rectangle(0, 0, width, height, 0x1a0a00).setOrigin(0)
-
-    // Decoração fundo
-    this.add.rectangle(width / 2, height / 2, 560, 480, 0x2d1a0a, 0.8).setOrigin(0.5)
+    this.add.rectangle(width / 2, height / 2, 560, 500, 0x2d1a0a, 0.85).setOrigin(0.5)
 
     // Título
-    this.add.text(width / 2, 70, '🎲 LUDO KING', {
-      fontSize: '52px', fontFamily: '"Arial Black", Arial',
+    this.add.text(width / 2, 68, '🎲 LUDO KING', {
+      fontSize: '50px', fontFamily: '"Arial Black", Arial',
       color: '#FFD700', stroke: '#8B4513', strokeThickness: 5
     }).setOrigin(0.5)
 
-    this.add.text(width / 2, 130, 'Sem propagandas • Jogo local', {
-      fontSize: '14px', color: '#888', fontFamily: 'Arial'
+    this.add.text(width / 2, 125, 'Sem propagandas • Jogo local', {
+      fontSize: '13px', color: '#777', fontFamily: 'Arial'
     }).setOrigin(0.5)
 
-    // ── Seletor de jogadores ──────────────────────────────────────
-    this.add.text(width / 2, 190, 'Número de Jogadores', {
-      fontSize: '18px', color: '#fff', fontFamily: 'Arial'
+    // ── Número de jogadores ───────────────────────────────────────
+    this.add.text(width / 2, 172, 'Número de Jogadores', {
+      fontSize: '17px', color: '#ccc', fontFamily: 'Arial'
     }).setOrigin(0.5)
 
     this.countBtns = []
-    for (const n of [2, 3, 4]) {
-      const btn = this.add.text(width / 2 + (n - 3) * 90, 230, `${n}`, {
-        fontSize: '28px', fontFamily: '"Arial Black", Arial',
-        backgroundColor: '#3d2a0a',
-        padding: { x: 20, y: 8 }
+    for (let i = 0; i < 3; i++) {
+      const n = i + 2
+      const btn = this.add.text(width / 2 + (i - 1) * 95, 212, `${n}`, {
+        fontSize: '26px', fontFamily: '"Arial Black", Arial',
+        padding: { x: 22, y: 8 }
       }).setOrigin(0.5).setInteractive({ useHandCursor: true })
-      btn.on('pointerdown', () => { this.count = n; this.refreshUI() })
+      btn.on('pointerdown', () => { this.count = n; this.updateUI() })
       this.countBtns.push(btn)
     }
 
-    // ── Slots de jogadores ────────────────────────────────────────
-    this.add.text(width / 2, 295, 'Jogadores', {
-      fontSize: '16px', color: '#ccc', fontFamily: 'Arial'
+    // ── Slots dos jogadores ───────────────────────────────────────
+    this.add.text(width / 2, 268, 'Jogadores', {
+      fontSize: '15px', color: '#aaa', fontFamily: 'Arial'
     }).setOrigin(0.5)
 
-    this.slotBtns = []
+    this.slotRows = []
     for (let i = 0; i < 4; i++) {
-      const color   = COLOR_ORDER[i]
-      const hexStr  = '#' + PLAYER_COLORS[color].toString(16).padStart(6, '0')
-      const label   = i === 0 ? '👤 Humano (Você)' : (this.ai[i] ? '🤖 IA' : '👤 Humano')
-      const enabled = i < this.count
+      const y = 300 + i * 48
+      const bg = this.add.rectangle(width / 2, y, 420, 38, 0x1a0a00).setOrigin(0.5)
+      const label = this.add.text(width / 2, y, '', {
+        fontSize: '15px', fontFamily: 'Arial'
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true })
 
-      const btn = this.add.text(width / 2, 330 + i * 44, `${hexStr.toUpperCase()}  ${COLOR_NAME[color]}: ${label}`, {
-        fontSize: '16px', fontFamily: 'Arial',
-        color: enabled ? hexStr : '#555',
-        backgroundColor: enabled ? '#2a1800' : '#111',
-        padding: { x: 16, y: 6 }
-      }).setOrigin(0.5).setInteractive({ useHandCursor: i > 0 && enabled })
-
-      if (i > 0 && enabled) {
-        btn.on('pointerdown', () => {
-          this.ai[i] = !this.ai[i]
-          this.refreshUI()
-        })
-      }
-      this.slotBtns.push(btn)
+      const idx = i
+      label.on('pointerdown', () => {
+        if (idx === 0 || idx >= this.count) return
+        this.ai[idx] = !this.ai[idx]
+        this.updateUI()
+      })
+      this.slotRows.push({ bg, label })
     }
 
-    // ── Botão Iniciar ─────────────────────────────────────────────
-    const start = this.add.text(width / 2, height - 80, '▶  JOGAR', {
+    // ── Botão Jogar ───────────────────────────────────────────────
+    const start = this.add.text(width / 2, height - 72, '▶  JOGAR', {
       fontSize: '30px', fontFamily: '"Arial Black", Arial',
       color: '#1a0a00', backgroundColor: '#FFD700',
-      padding: { x: 40, y: 14 }
+      padding: { x: 42, y: 14 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true })
 
     start.on('pointerover', () => start.setBackgroundColor('#FFB300'))
     start.on('pointerout',  () => start.setBackgroundColor('#FFD700'))
     start.on('pointerdown', () => {
-      const setup: GameSetup = { playerCount: this.count, aiSlots: [...this.ai] }
+      const setup: GameSetup = {
+        playerCount: this.count,
+        aiSlots: this.ai.slice(0, this.count)
+      }
       this.scene.start('GameScene', setup)
     })
 
-    this.refreshUI()
+    this.updateUI()
   }
 
-  private refreshUI() {
-    // Atualiza seleção de contagem
+  private updateUI() {
+    // Botões de contagem
     for (let i = 0; i < this.countBtns.length; i++) {
       const n = i + 2
-      this.countBtns[i].setColor(n === this.count ? '#FFD700' : '#888')
-                        .setBackgroundColor(n === this.count ? '#5d3a0a' : '#3d2a0a')
+      const active = n === this.count
+      this.countBtns[i]
+        .setColor(active ? '#FFD700' : '#777')
+        .setBackgroundColor(active ? '#5d3a0a' : '#2a1800')
     }
 
-    // Garante que ai[0] é sempre false
-    this.ai[0] = false
+    // Slots
+    for (let i = 0; i < 4; i++) {
+      const { bg, label } = this.slotRows[i]
+      const color   = COLOR_ORDER[i]
+      const hex     = PLAYER_COLORS[color]
+      const hexStr  = '#' + hex.toString(16).padStart(6, '0')
+      const enabled = i < this.count
 
-    // Recria a cena para atualizar labels dos slots (mais simples que atualizar texto)
-    this.scene.restart({ _count: this.count, _ai: this.ai })
-  }
+      const who = i === 0
+        ? '👤 Você (Humano)'
+        : (this.ai[i] ? '🤖 IA' : '👤 Humano')
+      const text = `${COLOR_PT[color]}:  ${who}`
 
-  init(data: { _count?: number; _ai?: boolean[] }) {
-    if (data._count) this.count = data._count
-    if (data._ai)   this.ai    = data._ai
+      bg.setFillStyle(enabled ? 0x2a1800 : 0x111111)
+      label.setText(text)
+            .setColor(enabled ? hexStr : '#444')
+            .setInteractive(enabled && i > 0 ? { useHandCursor: true } : {})
+    }
   }
 }

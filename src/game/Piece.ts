@@ -118,6 +118,3 @@ export class Piece {
     this.ring.destroy()
   }
 }
-
-// Importação circular evitada — definida aqui para uso no Board.ts
-import { HOME_BASE as _HB } from '../constants/Board'
