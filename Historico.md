@@ -1,5 +1,12 @@
 # Histórico — Ludo King
 
+## 21 de junho de 2026 — Caminho não invade mais as home areas
+
+- **O que foi feito:**
+  - `drawPath()` em `Board.ts`: adicionado `&& !this.isHome(col, row)` para não pintar creme nas células do anel que estão dentro das home areas. O anel só aparece visualmente nos braços da cruz (drawCross já os cobre). Peças continuam passando por esses pontos logicamente, mas o fundo colorido da home area domina visualmente.
+- **Arquivos alterados:** `src/game/Board.ts`
+- **Decisões técnicas:** Em um grid 15×15, todos os pontos do anel fora da cruz pertencem às home areas — portanto drawPath() passa a ser efetivamente vazia após essa mudança; a cruz cobre o restante.
+
 ## 21 de junho de 2026 — Correção das estrelas seguras (rosettes fora das home areas)
 
 - **O que foi feito:**

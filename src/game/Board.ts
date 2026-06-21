@@ -70,9 +70,10 @@ export class Board {
   }
 
   private drawPath() {
+    // Só desenha creme nas células de caminho fora das home areas e fora da cruz
     this.g.fillStyle(C.PATH_BG)
     for (const [col, row] of MAIN_PATH) {
-      if (!this.isCross(col, row)) {
+      if (!this.isCross(col, row) && !this.isHome(col, row)) {
         const r = this.r(col, row)
         this.g.fillRect(r.x, r.y, r.w, r.h)
       }
