@@ -1,5 +1,16 @@
 # Histórico — Ludo King
 
+## 21 de junho de 2026 — Correção crítica da geometria do tabuleiro
+
+- **O que foi feito:**
+  - **[BUG CRÍTICO]** `src/constants/Board.ts`: `PATH_ENTRY` estava com as 4 cores trocadas — o correto é YELLOW=0, BLUE=12, RED=24, GREEN=36 (era GREEN=0, YELLOW=12, BLUE=24, RED=36). Com os valores errados cada peça percorria a rota oposta e a transição para a coluna do lar fazia um "teleporte" visual.
+  - **[BUG CRÍTICO]** `HOME_COL[GREEN]` apontava para o braço superior (rows 4→8), correto é braço inferior (rows 13→9). `HOME_COL[BLUE]` apontava para o braço inferior, correto é braço superior (rows 1→5). As faixas coloridas apareciam no lugar errado do tabuleiro.
+  - **[BUG VISUAL]** `HOME_BASE`: slots de base movidos para o interior das áreas de lar (ex: col 2/4 em vez de col 1/13) para evitar sobreposição com o caminho creme.
+  - **[BUG VISUAL]** `SAFE_ABS`: removidas estrelas geminadas nas posições +1 de cada entrada (índices 1,13,25,37). Agora são 8 estrelas: 4 entradas + 4 rosettes (+8).
+  - **[BUG VISUAL]** `src/game/Board.ts`: triângulos do centro estavam com cores trocadas. Correto: esquerdo=YELLOW, superior=BLUE, direito=RED, inferior=GREEN.
+- **Arquivos alterados:** `src/constants/Board.ts`, `src/game/Board.ts`
+- **Decisões técnicas:** `PATH_ENTRY` é a âncora de todo o sistema de coordenadas do anel. Cada cor deve ter `relPos 47 = HOME_COL[cor][0]` para garantir transição visual suave ao entrar na coluna do lar.
+
 ## 21 de junho de 2026 — Correções de bugs críticos + melhorias de layout, IA e game feel
 
 - **O que foi feito:**

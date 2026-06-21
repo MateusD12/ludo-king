@@ -118,12 +118,13 @@ export class Board {
     const mx = cx + s / 2, my = cy + s / 2
 
     const corners: [number, number][] = [
-      [cx, cy + s],     // bottom-left  → Green
-      [cx, cy],         // top-left     → Yellow
-      [cx + s, cy],     // top-right    → Blue
-      [cx + s, cy + s], // bottom-right → Red
+      [cx, cy + s],     // bottom-left  → braço esquerdo (Amarelo)
+      [cx, cy],         // top-left     → braço superior (Azul)
+      [cx + s, cy],     // top-right    → braço direito (Vermelho)
+      [cx + s, cy + s], // bottom-right → braço inferior (Verde)
     ]
-    const triColors: PlayerColor[] = ['GREEN', 'YELLOW', 'BLUE', 'RED']
+    // Cada triângulo aponta em direção ao braço da coluna do lar do seu jogador
+    const triColors: PlayerColor[] = ['YELLOW', 'BLUE', 'RED', 'GREEN']
 
     for (let i = 0; i < 4; i++) {
       const [ax, ay] = corners[i]
