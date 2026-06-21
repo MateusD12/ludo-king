@@ -83,6 +83,7 @@ export class Board {
     SAFE_ABS.forEach(idx => {
       if (idx >= MAIN_PATH.length) return
       const [col, row] = MAIN_PATH[idx]
+      if (this.isHome(col, row)) return   // estrelas nunca aparecem dentro de home areas
       const { x, y } = cellPx(col, row)
       this.drawStar(x, y)
     })

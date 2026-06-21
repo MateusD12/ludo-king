@@ -46,7 +46,7 @@ export const PATH_ENTRY: Record<PlayerColor, number> = {
 // Casas seguras (índices absolutos no MAIN_PATH) — sem captura
 export const SAFE_ABS = new Set<number>([
   0, 12, 24, 36,   // casas de entrada de cada cor
-  8, 20, 32, 44,   // rosettes (+8 de cada entrada)
+  10, 22, 34, 46,  // rosettes nas junções dos braços: [6,1],[13,6],[8,13],[1,8]
 ])
 
 // Colunas do lar por cor — 5 casas, índice 0 = entrada (mais longe do centro), índice 4 = mais perto

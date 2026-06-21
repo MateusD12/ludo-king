@@ -1,5 +1,13 @@
 # Histórico — Ludo King
 
+## 21 de junho de 2026 — Correção das estrelas seguras (rosettes fora das home areas)
+
+- **O que foi feito:**
+  - `SAFE_ABS`: rosettes mudados de [8,20,32,44] → [10,22,34,46]. Os índices antigos mapeavam para células DENTRO das home areas (ex: [4,1] dentro do amarelo, [13,4] dentro do azul). Os novos índices ficam nas junções dos braços da cruz, fora de qualquer home area: [6,1],[13,6],[8,13],[1,8].
+  - `drawSafeStars()`: guard adicionado para nunca desenhar estrela em célula isHome(), independente dos índices configurados.
+- **Arquivos alterados:** `src/constants/Board.ts`, `src/game/Board.ts`
+- **Decisões técnicas:** rosettes devem estar nas junções dos braços da cruz com o anel externo — posições simétricas equidistantes das entradas de cada cor.
+
 ## 21 de junho de 2026 — Correção crítica da geometria do tabuleiro
 
 - **O que foi feito:**
