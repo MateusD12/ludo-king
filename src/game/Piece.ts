@@ -8,7 +8,7 @@ import { PLAYER_COLORS, PlayerColor } from '../constants/Colors'
 export class Piece {
   readonly color: PlayerColor
   readonly idx: number        // 0-3 (qual das 4 peças do jogador)
-  piecePos = -1               // -1=base, 0-51=anel, 52-56=coluna, 57=finished
+  piecePos = -1               // -1=base, 0-47=anel, 48-52=coluna do lar, 53=finalizado (FINISHED)
 
   private circ: Phaser.GameObjects.Arc
   private dot:  Phaser.GameObjects.Arc
@@ -46,8 +46,8 @@ export class Piece {
 
   screenPos(): { x: number; y: number } {
     // offset para evitar sobreposição de peças na mesma casa
-    const dx = (this.idx % 2 === 0 ? -1 : 1) * 6
-    const dy = (this.idx < 2 ? -1 : 1) * 6
+    const dx = (this.idx % 2 === 0 ? -1 : 1) * 11
+    const dy = (this.idx < 2 ? -1 : 1) * 11
 
     if (this.piecePos === -1) {
       const [col, row] = HOME_BASE[this.color][this.idx]
@@ -77,12 +77,13 @@ export class Piece {
 
   // Anima peça passando por cada posição na lista (uma por vez)
   async animateThrough(positions: number[]): Promise<void> {
+    const msPerStep = Math.min(90, Math.round(400 / positions.length))
     for (const pos of positions) {
       const saved = this.piecePos
       this.piecePos = pos
       const { x, y } = this.screenPos()
       this.piecePos = saved
-      await this.tweenTo(x, y, 90)
+      await this.tweenTo(x, y, msPerStep)
     }
   }
 

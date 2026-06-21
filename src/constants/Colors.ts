@@ -1,5 +1,9 @@
 export type PlayerColor = 'GREEN' | 'YELLOW' | 'BLUE' | 'RED'
 
+export const COLOR_PT: Record<PlayerColor, string> = {
+  GREEN: 'Verde', YELLOW: 'Amarelo', BLUE: 'Azul', RED: 'Vermelho',
+}
+
 export const PLAYER_COLORS: Record<PlayerColor, number> = {
   GREEN:  0x4CAF50,
   YELLOW: 0xFFC107,

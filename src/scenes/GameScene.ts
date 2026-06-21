@@ -5,13 +5,10 @@ import { Player } from '../game/Player'
 import { RulesEngine, MoveResult } from '../game/RulesEngine'
 import { AIStrategy } from '../ai/AIStrategy'
 import { GameSetup } from './MenuScene'
-import { PLAYER_COLORS, PlayerColor, C } from '../constants/Colors'
-import { BOARD_PX, OX, OY } from '../constants/Board'
+import { PLAYER_COLORS, PlayerColor, COLOR_PT } from '../constants/Colors'
+import { BOARD_PX, OX, OY, HOME_START } from '../constants/Board'
 
 const COLOR_ORDER: PlayerColor[] = ['GREEN', 'YELLOW', 'BLUE', 'RED']
-const COLOR_PT: Record<PlayerColor, string> = {
-  GREEN: 'Verde', YELLOW: 'Amarelo', BLUE: 'Azul', RED: 'Vermelho'
-}
 
 export class GameScene extends Phaser.Scene {
   private players: Player[] = []
@@ -25,10 +22,11 @@ export class GameScene extends Phaser.Scene {
   private validMoves: MoveResult[] = []
 
   // UI
-  private turnLabel!: Phaser.GameObjects.Text
-  private infoLabel!: Phaser.GameObjects.Text
-  private menuBtn!:  Phaser.GameObjects.Text
-  private rankPanel!: Phaser.GameObjects.Text
+  private playerBar!:  Phaser.GameObjects.Rectangle
+  private turnLabel!:  Phaser.GameObjects.Text
+  private infoLabel!:  Phaser.GameObjects.Text
+  private menuBtn!:    Phaser.GameObjects.Text
+  private rankPanel!:  Phaser.GameObjects.Text
 
   constructor() { super('GameScene') }
 
@@ -50,7 +48,7 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.scale
 
     // Fundo
-    this.add.rectangle(0, 0, width, height, C.UI_BG).setOrigin(0)
+    this.add.rectangle(0, 0, width, height, 0x1a0a00).setOrigin(0)
 
     // Tabuleiro
     new Board(this)
@@ -58,26 +56,29 @@ export class GameScene extends Phaser.Scene {
     // Sidebar X position
     const sideX = OX + BOARD_PX + 30 + (width - OX - BOARD_PX - 30) / 2
 
+    // Barra de cor do jogador ativo (indicador visual)
+    this.playerBar = this.add.rectangle(sideX, 32, 90, 8, 0xFFFFFF).setDepth(20)
+
     // Dado
     this.dice = new Dice(this, sideX, height / 2 - 20)
 
     // Labels UI
-    this.turnLabel = this.add.text(sideX, 60, '', {
+    this.turnLabel = this.add.text(sideX, 58, '', {
       fontSize: '20px', fontFamily: '"Arial Black", Arial', color: '#FFD700',
       align: 'center', wordWrap: { width: 130 }
     }).setOrigin(0.5).setDepth(20)
 
-    this.infoLabel = this.add.text(sideX, 100, '', {
+    this.infoLabel = this.add.text(sideX, 96, '', {
       fontSize: '13px', color: '#ccc', fontFamily: 'Arial',
       align: 'center', wordWrap: { width: 130 }
     }).setOrigin(0.5).setDepth(20)
 
-    this.rankPanel = this.add.text(sideX, height - 100, '', {
+    this.rankPanel = this.add.text(sideX, height - 110, '', {
       fontSize: '12px', color: '#999', fontFamily: 'Arial', align: 'center'
     }).setOrigin(0.5).setDepth(20)
 
     // Botão menu
-    this.menuBtn = this.add.text(sideX, height - 40, '← Menu', {
+    this.menuBtn = this.add.text(sideX, height - 36, '← Menu', {
       fontSize: '14px', color: '#FFD700', fontFamily: 'Arial'
     }).setOrigin(0.5).setDepth(20).setInteractive({ useHandCursor: true })
     this.menuBtn.on('pointerdown', () => { this.cleanUp(); this.scene.start('MenuScene') })
@@ -93,7 +94,6 @@ export class GameScene extends Phaser.Scene {
   }
 
   private startTurn() {
-    // Pular jogadores que terminaram
     let tries = 0
     while (this.players[this.curIdx].finished && tries < this.players.length) {
       this.curIdx = (this.curIdx + 1) % this.players.length
@@ -101,8 +101,13 @@ export class GameScene extends Phaser.Scene {
     }
 
     const player = this.players[this.curIdx]
-    const hexCol = '#' + PLAYER_COLORS[player.color].toString(16).padStart(6, '0')
-    this.turnLabel.setText(`${COLOR_PT[player.color]}`).setColor(hexCol)
+    const col    = PLAYER_COLORS[player.color]
+    const hexCol = '#' + col.toString(16).padStart(6, '0')
+
+    // Atualizar barra de cor do jogador ativo
+    this.playerBar.setFillStyle(col)
+
+    this.turnLabel.setText(COLOR_PT[player.color]).setColor(hexCol)
     this.infoLabel.setText(player.isAI ? '🤖 IA pensando...' : '🎲 Role o dado')
 
     if (player.isAI) {
@@ -141,7 +146,6 @@ export class GameScene extends Phaser.Scene {
       return
     }
 
-    // Jogador escolhe qual peça mover
     this.waiting = true
     this.infoLabel.setText('Escolha uma peça')
     this.validMoves.forEach(m => m.piece.setHighlight(true))
@@ -160,17 +164,25 @@ export class GameScene extends Phaser.Scene {
   private async applyMove(move: MoveResult) {
     this.animating = true
 
-    // Anima o movimento
     await move.piece.animateThrough(move.pathSteps)
     move.piece.piecePos = move.newPos
     move.piece.syncPosition()
 
-    // Capturas
+    // Capturas — camera shake
     for (const cap of move.captures) {
       await cap.animateCapture()
     }
     if (move.captures.length > 0) {
+      this.cameras.main.shake(150, 0.007)
       this.infoLabel.setText(`Captura! Turno extra!`)
+    }
+
+    // Feedback ao entrar na coluna do lar
+    if (move.newPos >= HOME_START && move.piece.piecePos !== move.newPos) {
+      // já sincronizado acima; flash na câmera para sinalizar entrada no lar
+    }
+    if (move.newPos >= HOME_START) {
+      this.cameras.main.flash(180, 255, 215, 0, false) // flash dourado
     }
 
     this.animating = false
@@ -182,7 +194,6 @@ export class GameScene extends Phaser.Scene {
       player.rank = rank
       this.updateRankPanel()
 
-      // Checar se todos terminaram
       const allDone = this.players.every(p => p.finished)
       if (allDone || rank === 1) {
         this.cleanUp()
@@ -192,7 +203,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     if (move.extraTurn) {
-      if (!move.captures.length) this.infoLabel.setText('Turno extra! 🎲')
+      if (!move.captures.length) {
+        this.infoLabel.setText('Turno extra! 🎲')
+        // Bounce no infoLabel para destacar turno extra
+        this.tweens.add({ targets: this.infoLabel, scaleX: 1.2, scaleY: 1.2, duration: 150, yoyo: true, ease: 'Back.easeOut' })
+      }
       await this.delay(500)
       this.startTurn()
     } else {

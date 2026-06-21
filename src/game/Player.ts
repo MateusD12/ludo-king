@@ -1,7 +1,7 @@
 import Phaser from 'phaser'
 import { Piece } from './Piece'
 import { PlayerColor } from '../constants/Colors'
-import { PATH_ENTRY } from '../constants/Board'
+import { PATH_ENTRY, FINISHED } from '../constants/Board'
 
 export class Player {
   readonly color: PlayerColor
@@ -18,7 +18,7 @@ export class Player {
   }
 
   get finished(): boolean {
-    return this.pieces.every(p => p.piecePos === 57)
+    return this.pieces.every(p => p.piecePos === FINISHED)
   }
 
   destroy() {

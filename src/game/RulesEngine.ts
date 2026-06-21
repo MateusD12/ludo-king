@@ -29,13 +29,16 @@ export class RulesEngine {
       return newHomeIdx <= HOME_COL[player.color].length   // 0-4 = casas, 5 = FINISHED exato
     }
 
-    // No anel externo: verificar se pode entrar na coluna sem sobretiro
+    // No anel externo: verificar se pode entrar na coluna sem sobretiro e se destino não está bloqueado
     const relPos = piece.piecePos
     const distToEntry = PATH_LEN - relPos  // quantos passos até a entrada da coluna
     if (dice >= distToEntry) {
       const homeSteps = dice - distToEntry
       return homeSteps <= HOME_COL[player.color].length  // no máximo 5 passos dentro
     }
+
+    const destAbs = (player.pathOffset + relPos + dice) % PATH_LEN
+    if (this.isBlocked(destAbs, player)) return false
 
     return true
   }
@@ -126,15 +129,14 @@ export class RulesEngine {
   }
 
   isBlocked(absIdx: number, movingPlayer: Player): boolean {
-    // Casa bloqueada = 2+ peças do MESMO jogador nessa posição
+    // Casa bloqueada para movingPlayer = 2+ peças de um jogador INIMIGO nessa posição
     for (const other of this.players) {
-      if (other === movingPlayer) {
-        const count = other.pieces.filter(p => {
-          if (p.piecePos < 0 || p.piecePos >= HOME_START) return false
-          return (other.pathOffset + p.piecePos) % PATH_LEN === absIdx
-        }).length
-        if (count >= 2) return true
-      }
+      if (other === movingPlayer) continue
+      const count = other.pieces.filter(p => {
+        if (p.piecePos < 0 || p.piecePos >= HOME_START) return false
+        return (other.pathOffset + p.piecePos) % PATH_LEN === absIdx
+      }).length
+      if (count >= 2) return true
     }
     return false
   }

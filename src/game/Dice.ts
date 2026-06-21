@@ -84,8 +84,18 @@ export class Dice {
           if (ticks >= total) {
             this.value = Math.ceil(Math.random() * 6)
             this.draw(this.value)
-            this.rolling = false
-            resolve(this.value)
+            // Pop de resultado: escala 1 → 1.35 → 1
+            this.scene.tweens.add({
+              targets: this.g,
+              scaleX: 1.35, scaleY: 1.35,
+              duration: 110,
+              ease: 'Back.easeOut',
+              yoyo: true,
+              onComplete: () => {
+                this.rolling = false
+                resolve(this.value)
+              }
+            })
           }
         }
       })
