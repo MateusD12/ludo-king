@@ -31,7 +31,7 @@ export class RulesEngine {
 
     // No anel externo: verificar se pode entrar na coluna sem sobretiro e se destino não está bloqueado
     const relPos = piece.piecePos
-    const distToEntry = PATH_LEN - relPos  // quantos passos até a entrada da coluna
+    const distToEntry = 51 - relPos  // 51 casas de jornada no anel externo
     if (dice >= distToEntry) {
       const homeSteps = dice - distToEntry
       return homeSteps <= HOME_COL[player.color].length  // no máximo 5 passos dentro
@@ -69,11 +69,11 @@ export class RulesEngine {
     } else {
       // Anel externo
       const relPos = piece.piecePos
-      const distToEntry = PATH_LEN - relPos
+      const distToEntry = 51 - relPos
 
       if (dice >= distToEntry) {
         // Entra na coluna do lar
-        for (let s = relPos + 1; s < PATH_LEN; s++) pathSteps.push(s)
+        for (let s = relPos + 1; s <= 50; s++) pathSteps.push(s)
         const homeSteps = dice - distToEntry
         if (homeSteps === 0) {
           // Parou exatamente na entrada — fica como HOME_START + 0 seria antes da primeira
@@ -129,15 +129,7 @@ export class RulesEngine {
   }
 
   isBlocked(absIdx: number, movingPlayer: Player): boolean {
-    // Casa bloqueada para movingPlayer = 2+ peças de um jogador INIMIGO nessa posição
-    for (const other of this.players) {
-      if (other === movingPlayer) continue
-      const count = other.pieces.filter(p => {
-        if (p.piecePos < 0 || p.piecePos >= HOME_START) return false
-        return (other.pathOffset + p.piecePos) % PATH_LEN === absIdx
-      }).length
-      if (count >= 2) return true
-    }
+    // Regra de barreira desativada a pedido do usuário
     return false
   }
 }

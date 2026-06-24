@@ -5,8 +5,8 @@ import { WinScene }  from './scenes/WinScene'
 
 new Phaser.Game({
   type: Phaser.AUTO,
-  width: 800,
-  height: 700,
+  width: 1100,
+  height: 800,
   backgroundColor: '#1a0a00',
   scene: [MenuScene, GameScene, WinScene],
   scale: {

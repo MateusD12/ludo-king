@@ -10,7 +10,7 @@ export class Piece {
   readonly idx: number        // 0-3 (qual das 4 peças do jogador)
   piecePos = -1               // -1=base, 0-47=anel, 48-52=coluna do lar, 53=finalizado (FINISHED)
 
-  private sprite: Phaser.GameObjects.Sprite
+  private container: Phaser.GameObjects.Container
   private ring: Phaser.GameObjects.Arc
   private scene: Phaser.Scene
 
@@ -22,26 +22,63 @@ export class Piece {
     const col = PLAYER_COLORS[color]
     const { x, y } = this.screenPos()
 
-    this.ring = scene.add.circle(x, y, CELL * 0.42, 0xFFFF00, 0).setDepth(5).setStrokeStyle(3, 0xFFFF00, 0)
-    this.sprite = scene.add.sprite(x, y, 'piece_base').setDepth(6)
-    // Escalar a imagem para o tamanho da célula (ex: CELL * 0.7)
-    this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75)
-    this.sprite.setTint(col)
+    this.container = scene.add.container(x, y).setDepth(6)
+    
+    // Dimensões relativas à CELL
+    const w = CELL * 0.6
+    const h = CELL * 0.4
+    const headY = -CELL * 0.5
 
-    this.sprite.setInteractive()
-    this.sprite.on('pointerdown', () => scene.events.emit('pieceClicked', this))
-    this.sprite.on('pointerover', () => this.sprite.setAlpha(0.75))
-    this.sprite.on('pointerout',  () => this.sprite.setAlpha(1))
+    // 1. Desenhamos o peão inteiro em um objeto Graphics para precisão 2.5D
+    const g = scene.add.graphics()
+
+    // Sombra do peão na mesa
+    g.fillStyle(0x000000, 0.4)
+    g.fillEllipse(6, 8, w, h)
+
+    // Base do peão (Efeito 3D)
+    g.fillStyle(0x000000, 0.3)
+    g.fillEllipse(0, 3, w, h)
+    g.fillStyle(col, 1)
+    g.fillEllipse(0, 0, w, h)
+
+    // Corpo (Cone)
+    g.beginPath()
+    g.moveTo(-w/2, 0)
+    g.lineTo(w/2, 0)
+    g.lineTo(w/4, headY)
+    g.lineTo(-w/4, headY)
+    g.closePath()
+    g.fillPath()
+
+    // Cabeça do peão
+    g.fillCircle(0, headY, CELL * 0.22)
+    
+    // Brilho / Highlight
+    g.fillStyle(0xFFFFFF, 0.5)
+    g.fillCircle(-CELL * 0.06, headY - CELL * 0.06, CELL * 0.06)
+
+    this.ring = scene.add.circle(0, 0, CELL * 0.45, 0xFFFF00, 0).setStrokeStyle(3, 0xFFFF00, 0)
+    
+    this.container.add([g, this.ring])
+
+    // Hitbox invisível para cliques (maior para facilitar no mobile)
+    const hitZone = scene.add.circle(0, headY / 2, CELL * 0.6, 0, 0).setInteractive({ useHandCursor: true })
+    this.container.add(hitZone)
+
+    hitZone.on('pointerdown', () => scene.events.emit('pieceClicked', this))
+    hitZone.on('pointerover', () => this.container.setAlpha(0.85))
+    hitZone.on('pointerout',  () => this.container.setAlpha(1))
   }
 
   setHighlight(on: boolean) {
     if (on) {
       this.ring.setFillStyle(0xFFFF00, 0.15).setStrokeStyle(3, 0xFFFF00, 1)
-      this.scene.tweens.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.15, scaleY: this.sprite.scaleY * 1.15, duration: 350, yoyo: true, repeat: -1 })
+      this.scene.tweens.add({ targets: this.container, scaleX: 1.15, scaleY: 1.15, duration: 350, yoyo: true, repeat: -1 })
     } else {
       this.ring.setFillStyle(0, 0).setStrokeStyle(0, 0, 0)
-      this.scene.tweens.killTweensOf(this.sprite)
-      this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75)
+      this.scene.tweens.killTweensOf(this.container)
+      this.container.setScale(1)
     }
   }
 
@@ -71,8 +108,7 @@ export class Piece {
 
   syncPosition() {
     const { x, y } = this.screenPos()
-    this.sprite.setPosition(x, y)
-    this.ring.setPosition(x, y)
+    this.container.setPosition(x, y)
   }
 
   // Anima peça passando por cada posição na lista (uma por vez)
@@ -90,7 +126,7 @@ export class Piece {
   private tweenTo(x: number, y: number, ms: number): Promise<void> {
     return new Promise(resolve => {
       this.scene.tweens.add({
-        targets: [this.sprite, this.ring],
+        targets: this.container,
         x, y, duration: ms,
         ease: 'Sine.easeInOut',
         onComplete: () => resolve()
@@ -101,19 +137,18 @@ export class Piece {
   async animateCapture(): Promise<void> {
     await new Promise<void>(resolve => {
       this.scene.tweens.add({
-        targets: [this.sprite],
+        targets: this.container,
         scaleX: 0, scaleY: 0, alpha: 0, duration: 300,
         ease: 'Back.easeIn',
         onComplete: () => resolve()
       })
     })
-    this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75).setAlpha(1)
+    this.container.setScale(1).setAlpha(1)
     this.piecePos = -1
     this.syncPosition()
   }
 
   destroy() {
-    this.sprite.destroy()
-    this.ring.destroy()
+    this.container.destroy()
   }
 }

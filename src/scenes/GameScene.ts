@@ -22,7 +22,7 @@ export class GameScene extends Phaser.Scene {
   private validMoves: MoveResult[] = []
 
   // UI
-  private playerBar!:  Phaser.GameObjects.Rectangle
+  private playerHeaderGraphics!: Phaser.GameObjects.Graphics
   private turnLabel!:  Phaser.GameObjects.Text
   private infoLabel!:  Phaser.GameObjects.Text
   private menuBtn!:    Phaser.GameObjects.Text
@@ -37,51 +37,89 @@ export class GameScene extends Phaser.Scene {
     this.waiting    = false
     this.animating  = false
 
-    const count = data.playerCount ?? 4
-    const aiSlots = data.aiSlots ?? [false, true, true, true]
-    for (let i = 0; i < count; i++) {
-      this.players.push(new Player(this, COLOR_ORDER[i], aiSlots[i] ?? false))
+    // Novo formato baseado em posições (Verde, Amarelo, Azul, Vermelho)
+    if (data.slots) {
+      for (let i = 0; i < 4; i++) {
+        if (data.slots[i] !== 'VAZIO') {
+          this.players.push(new Player(this, COLOR_ORDER[i], data.slots[i] === 'ROBÔ'))
+        }
+      }
+    } else {
+      // Fallback para inicialização via código (debug)
+      this.players = [
+        new Player(this, 'GREEN', false),
+        new Player(this, 'YELLOW', true),
+        new Player(this, 'BLUE', true),
+        new Player(this, 'RED', true)
+      ]
     }
   }
 
   create() {
     const { width, height } = this.scale
 
-    // Fundo
-    this.add.rectangle(0, 0, width, height, 0x1a0a00).setOrigin(0)
+    // Fundo fotorealista de madeira é renderizado pelo Board.ts
 
     // Tabuleiro
     new Board(this)
 
-    // Sidebar X position
+    // Sidebar e Dimensões do Painel
+    const panelWidth = 240
     const sideX = OX + BOARD_PX + 30 + (width - OX - BOARD_PX - 30) / 2
+    const panelY = height / 2 - 140
+    const panelHeight = 280
 
-    // Barra de cor do jogador ativo (indicador visual)
-    this.playerBar = this.add.rectangle(sideX, 32, 90, 8, 0xFFFFFF).setDepth(20)
+    // Painel de Fundo da UI (Módulo estilo vidro/madeira)
+    this.add.graphics()
+      .fillStyle(0x2a1a10, 0.85) // Tom escuro amadeirado/couro
+      .fillRoundedRect(sideX - panelWidth/2, panelY, panelWidth, panelHeight, 12)
+      .lineStyle(2, 0x8a5a3a, 0.6) // Borda sutil
+      .strokeRoundedRect(sideX - panelWidth/2, panelY, panelWidth, panelHeight, 12)
+      .setDepth(19)
+
+    // Cabeçalho da cor do jogador (Desenhado dinamicamente no startTurn)
+    this.playerHeaderGraphics = this.add.graphics().setDepth(20)
+
+    // Textos UI
+    this.turnLabel = this.add.text(sideX, panelY + 28, '', {
+      fontSize: '22px', fontFamily: '"Arial Black", Arial', color: '#FFFFFF',
+      align: 'center'
+    }).setOrigin(0.5).setDepth(21)
+
+    this.infoLabel = this.add.text(sideX, panelY + 80, '', {
+      fontSize: '17px', color: '#FFFFFF', fontFamily: 'Arial',
+      align: 'center'
+    }).setOrigin(0.5).setDepth(21)
 
     // Dado
-    this.dice = new Dice(this, sideX, height / 2 - 20)
+    this.dice = new Dice(this, sideX, panelY + 160)
 
-    // Labels UI
-    this.turnLabel = this.add.text(sideX, 58, '', {
-      fontSize: '20px', fontFamily: '"Arial Black", Arial', color: '#FFD700',
-      align: 'center', wordWrap: { width: 130 }
+    // Instrução fixa do dado
+    this.add.text(sideX, panelY + 240, 'Toque para rolar', {
+      fontSize: '14px', color: '#aaaaaa', fontFamily: 'Arial', align: 'center'
+    }).setOrigin(0.5).setDepth(21)
+
+    // Botão Menu estilizado
+    const btnY = panelY + panelHeight + 35
+    this.add.graphics()
+      .fillStyle(0x2a1a10, 0.9)
+      .fillRoundedRect(sideX - 70, btnY - 22, 140, 44, 10)
+      .lineStyle(2, 0x8a5a3a, 0.6)
+      .strokeRoundedRect(sideX - 70, btnY - 22, 140, 44, 10)
+      .setDepth(19)
+
+    this.menuBtn = this.add.text(sideX, btnY, 'Menu', {
+      fontSize: '18px', color: '#FFFFFF', fontFamily: 'Arial'
     }).setOrigin(0.5).setDepth(20)
-
-    this.infoLabel = this.add.text(sideX, 96, '', {
-      fontSize: '13px', color: '#ccc', fontFamily: 'Arial',
-      align: 'center', wordWrap: { width: 130 }
-    }).setOrigin(0.5).setDepth(20)
-
-    this.rankPanel = this.add.text(sideX, height - 110, '', {
-      fontSize: '12px', color: '#999', fontFamily: 'Arial', align: 'center'
-    }).setOrigin(0.5).setDepth(20)
-
-    // Botão menu
-    this.menuBtn = this.add.text(sideX, height - 36, '← Menu', {
-      fontSize: '14px', color: '#FFD700', fontFamily: 'Arial'
-    }).setOrigin(0.5).setDepth(20).setInteractive({ useHandCursor: true })
+    
+    // Aumentar a área de clique usando setInteractive com um retângulo
+    this.menuBtn.setInteractive(new Phaser.Geom.Rectangle(-30, -15, 100, 50), Phaser.Geom.Rectangle.Contains, { useHandCursor: true })
     this.menuBtn.on('pointerdown', () => { this.cleanUp(); this.scene.start('MenuScene') })
+
+    // Rank Panel
+    this.rankPanel = this.add.text(sideX, btnY + 50, '', {
+      fontSize: '13px', color: '#cccccc', fontFamily: 'Arial', align: 'center'
+    }).setOrigin(0.5).setDepth(20)
 
     // Eventos
     this.events.on('diceClicked', this.onDiceClicked, this)
@@ -104,10 +142,17 @@ export class GameScene extends Phaser.Scene {
     const col    = PLAYER_COLORS[player.color]
     const hexCol = '#' + col.toString(16).padStart(6, '0')
 
-    // Atualizar barra de cor do jogador ativo
-    this.playerBar.setFillStyle(col)
+    // Atualizar barra de cor do jogador ativo no topo do painel
+    const panelWidth = 240
+    const sideX = OX + BOARD_PX + 30 + (this.scale.width - OX - BOARD_PX - 30) / 2
+    const panelY = this.scale.height / 2 - 140
 
-    this.turnLabel.setText(COLOR_PT[player.color]).setColor(hexCol)
+    this.playerHeaderGraphics.clear()
+    this.playerHeaderGraphics.fillStyle(col, 1)
+    // Desenhamos um retângulo com os cantos superiores arredondados para encaixar no painel
+    this.playerHeaderGraphics.fillRoundedRect(sideX - panelWidth/2 + 2, panelY + 2, panelWidth - 4, 52, { tl: 10, tr: 10, bl: 0, br: 0 })
+
+    this.turnLabel.setText(COLOR_PT[player.color])
     this.infoLabel.setText(player.isAI ? '🤖 IA pensando...' : '🎲 Role o dado')
 
     if (player.isAI) {

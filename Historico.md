@@ -1,5 +1,15 @@
 # Histórico — Ludo King
 
+## 24 de junho de 2026 — Integração de Novas Artes UI e Correção da Lógica de Seleção
+
+- **O que foi feito:**
+  - `MenuScene.ts`: Atualização massiva no layout da tela inicial e tela de configuração. Textos removidos, botões redesenhados e reposicionados para alinhar com os sulcos da nova arte (`menu_2.png`). Textos ("JOGAR LOCAL", "INICIAR", etc.) tiveram suas escalas aumentadas e posições centralizadas de acordo com as bandejas de madeira fotorealistas.
+  - Correção na lógica de transição de tela: A imagem de fundo agora recalcula suas dimensões dinamicamente (`setDisplaySize`) ao sofrer uma troca de textura.
+  - Correção Crítica na Inicialização dos Jogadores (`GameScene.ts`): Adaptado o código para compreender os novos estados `'VAZIO'` e `'ROBÔ'` (anteriormente em inglês `'EMPTY'` e `'AI'`), garantindo que slots marcados como vazios não spawnem instâncias físicas no jogo e IAs joguem corretamente sozinhas.
+- **Arquivos alterados:** `src/scenes/MenuScene.ts`, `src/scenes/GameScene.ts`
+- **Decisões técnicas:** A interface agora delega completamente o visual passivo (nomes de cores, escudos) aos assets de background, operando apenas com UI limpa em cima dos artefatos interativos, melhorando a modularidade e peso visual.
+
+
 ## 21 de junho de 2026 — Caminho não invade mais as home areas
 
 - **O que foi feito:**

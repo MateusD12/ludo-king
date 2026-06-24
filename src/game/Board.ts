@@ -41,28 +41,57 @@ export class Board {
   }
 
   private drawBackground() {
-    const size = COLS * CELL + 8
-    const cx = OX - 4 + size / 2
-    const cy = OY - 4 + size / 2
-    this.scene.add.image(cx, cy, 'board_bg').setDisplaySize(size + 20, size + 20).setDepth(-1)
+    const { width, height } = this.scene.scale
+    
+    // 1. Fundo da tela inteira (Mesa de madeira)
+    this.scene.add.image(width / 2, height / 2, 'board_bg').setDisplaySize(width, height).setDepth(-2)
+
+    // Tamanho do tabuleiro e posição
+    const size = COLS * CELL
+    const cx = OX + size / 2
+    const cy = OY + size / 2
+
+    // 2. Sombra do tabuleiro
+    this.g.fillStyle(0x000000, 0.6)
+    this.g.fillRoundedRect(OX + 12, OY + 18, size, size, 16)
+
+    // 3. Moldura de madeira escura
+    this.g.fillStyle(0x3B2516, 1)
+    this.g.fillRoundedRect(OX - 10, OY - 10, size + 20, size + 20, 12)
+    this.g.lineStyle(4, 0x1A0F09, 1)
+    this.g.strokeRoundedRect(OX - 10, OY - 10, size + 20, size + 20, 12)
+
+    // 4. Superfície do tabuleiro (Creme)
+    this.g.fillStyle(C.BOARD_BG, 1)
+    this.g.fillRoundedRect(OX, OY, size, size, 6)
   }
 
   private drawHomeAreas() {
     for (const [color, col, row, w, h] of HOME_AREAS) {
       const px = OX + col * CELL, py = OY + row * CELL
-      this.g.fillStyle(HOME_FILL[color])
+      
+      // Quadrado externo da cor do jogador
+      this.g.fillStyle(PLAYER_COLORS[color], 1)
       this.g.fillRect(px, py, w * CELL, h * CELL)
-      this.g.lineStyle(3, PLAYER_COLORS[color], 1)
+      
+      // Linha fina de contorno
+      this.g.lineStyle(2, C.GRID_LINE, 0.8)
       this.g.strokeRect(px, py, w * CELL, h * CELL)
-      // círculo interno decorativo
-      this.g.fillStyle(PLAYER_COLORS[color], 0.25)
-      this.g.fillCircle(px + w * CELL / 2, py + h * CELL / 2, CELL * 2)
+
+      // Quadrado branco interno (área branca típica de Ludo)
+      const innerMargin = CELL * 0.8
+      this.g.fillStyle(C.WHITE, 0.95)
+      this.g.fillRoundedRect(px + innerMargin, py + innerMargin, w * CELL - innerMargin * 2, h * CELL - innerMargin * 2, 8)
+      
+      // Contorno interno
+      this.g.lineStyle(2, PLAYER_COLORS[color], 0.8)
+      this.g.strokeRoundedRect(px + innerMargin, py + innerMargin, w * CELL - innerMargin * 2, h * CELL - innerMargin * 2, 8)
     }
   }
 
   private drawCross() {
-    // Fundo creme da cruz (linhas 6-8 e colunas 6-8), excluindo home areas
-    this.g.fillStyle(C.PATH_BG)
+    // Fundo creme da cruz (linhas 6-8 e colunas 6-8), semi-transparente
+    this.g.fillStyle(C.PATH_BG, 0.4)
     for (let row = 0; row < 15; row++) {
       for (let col = 0; col < 15; col++) {
         if (this.isCross(col, row) && !this.isHome(col, row)) {
@@ -74,8 +103,8 @@ export class Board {
   }
 
   private drawPath() {
-    // Só desenha creme nas células de caminho fora das home areas e fora da cruz
-    this.g.fillStyle(C.PATH_BG)
+    // Só desenha creme nas células de caminho fora das home areas e fora da cruz, semi-transparente
+    this.g.fillStyle(C.PATH_BG, 0.4)
     for (const [col, row] of MAIN_PATH) {
       if (!this.isCross(col, row) && !this.isHome(col, row)) {
         const r = this.r(col, row)
@@ -110,8 +139,8 @@ export class Board {
     for (const color of COLORS_ORDER) {
       for (const [col, row] of HOME_COL[color]) {
         const r = this.r(col, row)
-        this.g.fillStyle(PLAYER_COLORS[color], 0.75)
-        this.g.fillRect(r.x + 2, r.y + 2, r.w - 4, r.h - 4)
+        this.g.fillStyle(PLAYER_COLORS[color], 0.8)
+        this.g.fillRect(r.x + 1, r.y + 1, r.w - 2, r.h - 2)
       }
     }
   }
@@ -135,12 +164,12 @@ export class Board {
     for (let i = 0; i < 4; i++) {
       const [ax, ay] = corners[i]
       const [bx, by] = corners[(i + 1) % 4]
-      this.g.fillStyle(PLAYER_COLORS[triColors[i]])
+      this.g.fillStyle(PLAYER_COLORS[triColors[i]], 0.7)
       this.g.fillTriangle(mx, my, ax, ay, bx, by)
     }
 
     // círculo central branco
-    this.g.fillStyle(C.WHITE)
+    this.g.fillStyle(C.WHITE, 0.8)
     this.g.fillCircle(mx, my, CELL * 0.6)
     // estrela central
     this.drawStar(mx, my)
@@ -150,10 +179,11 @@ export class Board {
     for (const color of COLORS_ORDER) {
       for (const [col, row] of HOME_BASE[color]) {
         const { x, y } = cellPx(col, row)
-        this.g.fillStyle(C.WHITE, 0.5)
-        this.g.fillCircle(x, y, CELL * 0.33)
-        this.g.lineStyle(2, PLAYER_COLORS[color], 0.8)
-        this.g.strokeCircle(x, y, CELL * 0.33)
+        // Círculo base colorido
+        this.g.fillStyle(PLAYER_COLORS[color], 0.3)
+        this.g.fillCircle(x, y, CELL * 0.35)
+        this.g.lineStyle(2, PLAYER_COLORS[color], 0.9)
+        this.g.strokeCircle(x, y, CELL * 0.35)
       }
     }
   }
