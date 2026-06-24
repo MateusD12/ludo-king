@@ -21,6 +21,12 @@ export class MenuScene extends Phaser.Scene {
 
   constructor() { super('MenuScene') }
 
+  preload() {
+    this.load.image('board_bg', '/assets/board_bg.png')
+    this.load.image('dice', '/assets/dice.png')
+    this.load.image('piece_base', '/assets/piece_base.png')
+  }
+
   create() {
     const { width, height } = this.scale
 

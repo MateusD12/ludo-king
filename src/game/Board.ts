@@ -16,8 +16,10 @@ const HOME_AREAS: [PlayerColor, number, number, number, number][] = [
 
 export class Board {
   private g: Phaser.GameObjects.Graphics
+  private scene: Phaser.Scene
 
   constructor(scene: Phaser.Scene) {
+    this.scene = scene
     this.g = scene.add.graphics().setDepth(0)
     this.draw()
   }
@@ -39,8 +41,10 @@ export class Board {
   }
 
   private drawBackground() {
-    this.g.fillStyle(C.BOARD_BG)
-    this.g.fillRect(OX - 4, OY - 4, COLS * CELL + 8, COLS * CELL + 8)
+    const size = COLS * CELL + 8
+    const cx = OX - 4 + size / 2
+    const cy = OY - 4 + size / 2
+    this.scene.add.image(cx, cy, 'board_bg').setDisplaySize(size + 20, size + 20).setDepth(-1)
   }
 
   private drawHomeAreas() {

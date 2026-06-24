@@ -2,11 +2,24 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  
+  <!-- Tema e cor -->
+  <meta name="theme-color" content="#1a0a00" />
+
+  <!-- iOS standalone (Safari não suporta manifest display:standalone nativo) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Ludo King" />
+
+  <!-- Ícones -->
+  <link rel="apple-touch-icon" href="/assets/dice.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="/assets/dice.png" />
+  
   <title>Ludo King</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a0a00; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+    body { background: #1a0a00; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; touch-action: none; }
     canvas { display: block; }
   </style>
 </head>

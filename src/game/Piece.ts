@@ -10,8 +10,7 @@ export class Piece {
   readonly idx: number        // 0-3 (qual das 4 peças do jogador)
   piecePos = -1               // -1=base, 0-47=anel, 48-52=coluna do lar, 53=finalizado (FINISHED)
 
-  private circ: Phaser.GameObjects.Arc
-  private dot:  Phaser.GameObjects.Arc
+  private sprite: Phaser.GameObjects.Sprite
   private ring: Phaser.GameObjects.Arc
   private scene: Phaser.Scene
 
@@ -24,23 +23,25 @@ export class Piece {
     const { x, y } = this.screenPos()
 
     this.ring = scene.add.circle(x, y, CELL * 0.42, 0xFFFF00, 0).setDepth(5).setStrokeStyle(3, 0xFFFF00, 0)
-    this.circ = scene.add.circle(x, y, CELL * 0.34, col).setDepth(6).setStrokeStyle(2, 0x000000, 0.8)
-    this.dot  = scene.add.circle(x, y, CELL * 0.13, 0xFFFFFF, 0.7).setDepth(7)
+    this.sprite = scene.add.sprite(x, y, 'piece_base').setDepth(6)
+    // Escalar a imagem para o tamanho da célula (ex: CELL * 0.7)
+    this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75)
+    this.sprite.setTint(col)
 
-    this.circ.setInteractive()
-    this.circ.on('pointerdown', () => scene.events.emit('pieceClicked', this))
-    this.circ.on('pointerover', () => this.circ.setAlpha(0.75))
-    this.circ.on('pointerout',  () => this.circ.setAlpha(1))
+    this.sprite.setInteractive()
+    this.sprite.on('pointerdown', () => scene.events.emit('pieceClicked', this))
+    this.sprite.on('pointerover', () => this.sprite.setAlpha(0.75))
+    this.sprite.on('pointerout',  () => this.sprite.setAlpha(1))
   }
 
   setHighlight(on: boolean) {
     if (on) {
       this.ring.setFillStyle(0xFFFF00, 0.15).setStrokeStyle(3, 0xFFFF00, 1)
-      this.scene.tweens.add({ targets: this.circ, scaleX: 1.15, scaleY: 1.15, duration: 350, yoyo: true, repeat: -1 })
+      this.scene.tweens.add({ targets: this.sprite, scaleX: this.sprite.scaleX * 1.15, scaleY: this.sprite.scaleY * 1.15, duration: 350, yoyo: true, repeat: -1 })
     } else {
       this.ring.setFillStyle(0, 0).setStrokeStyle(0, 0, 0)
-      this.scene.tweens.killTweensOf(this.circ)
-      this.circ.setScale(1)
+      this.scene.tweens.killTweensOf(this.sprite)
+      this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75)
     }
   }
 
@@ -70,8 +71,7 @@ export class Piece {
 
   syncPosition() {
     const { x, y } = this.screenPos()
-    this.circ.setPosition(x, y)
-    this.dot.setPosition(x, y)
+    this.sprite.setPosition(x, y)
     this.ring.setPosition(x, y)
   }
 
@@ -90,7 +90,7 @@ export class Piece {
   private tweenTo(x: number, y: number, ms: number): Promise<void> {
     return new Promise(resolve => {
       this.scene.tweens.add({
-        targets: [this.circ, this.dot, this.ring],
+        targets: [this.sprite, this.ring],
         x, y, duration: ms,
         ease: 'Sine.easeInOut',
         onComplete: () => resolve()
@@ -101,21 +101,19 @@ export class Piece {
   async animateCapture(): Promise<void> {
     await new Promise<void>(resolve => {
       this.scene.tweens.add({
-        targets: [this.circ, this.dot],
+        targets: [this.sprite],
         scaleX: 0, scaleY: 0, alpha: 0, duration: 300,
         ease: 'Back.easeIn',
         onComplete: () => resolve()
       })
     })
-    this.circ.setScale(1).setAlpha(1)
-    this.dot.setScale(1).setAlpha(1)
+    this.sprite.setDisplaySize(CELL * 0.75, CELL * 0.75).setAlpha(1)
     this.piecePos = -1
     this.syncPosition()
   }
 
   destroy() {
-    this.circ.destroy()
-    this.dot.destroy()
+    this.sprite.destroy()
     this.ring.destroy()
   }
 }
